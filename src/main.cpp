@@ -1,11 +1,11 @@
-#include "opengl-framework/opengl-framework.hpp" // Inclue la librairie qui va nous servir à faire du rendu
+#include "opengl-framework/opengl-framework.hpp"
 
 
 int main()
 {
     // Initialisation
-    gl::init("TPs de Rendering"); // On crée une fenêtre et on choisit son nom
-    gl::maximize_window(); // On peut la maximiser si on veut
+    gl::init("TPs de Rendering"); 
+    gl::maximize_window(); 
 
     auto const rectangle_mesh = gl::Mesh{{
         .vertex_buffers = {{
@@ -18,8 +18,8 @@ int main()
             },
         }},
         .index_buffer   = {
-            0, 1, 2, // Indices du premier triangle : on utilise le 1er, 2ème et 3ème sommet
-            0, 2, 3  // Indices du deuxième triangle : on utilise le 1er, 3ème et 4ème sommet
+            0, 1, 2,
+            0, 2, 3  
         },
     }};
 
@@ -30,10 +30,15 @@ int main()
     
     while (gl::window_is_open())
     {
-        glClearColor(0.f, 0.f, 1.f, 1.f); // Choisis la couleur à utiliser. Les paramètres sont R, G, B, A avec des valeurs qui vont de 0 à 1
-        glClear(GL_COLOR_BUFFER_BIT); // Exécute concrètement l'action d'appliquer sur tout l'écran la couleur choisie au-dessus
 
-        shader.bind(); // On a besoin qu'un shader soit bind (i.e. "actif") avant de draw(). On en reparle dans la section d'après.
-        rectangle_mesh.draw(); 
+        glClearColor(0.f, 0.f, 1.f, 1.f);
+        glClear(GL_COLOR_BUFFER_BIT);
+    
+        shader.bind();
+    
+        float aspectRatio = gl::framebuffer_aspect_ratio();
+        shader.set_uniform("aspect_ratio", aspectRatio);
+    
+        rectangle_mesh.draw();
     }
 }
