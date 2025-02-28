@@ -38,7 +38,7 @@ int main() {
         .fragment = gl::ShaderSource::File{"res/fragment.glsl"},
     }};
 
-    glEnable(GL_DEPTH_TEST); // Activer le test de profondeur
+    glEnable(GL_DEPTH_TEST); // ici on a la profondeur !
 
     while (gl::window_is_open()) {
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
