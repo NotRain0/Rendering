@@ -1,11 +1,12 @@
 #include "opengl-framework/opengl-framework.hpp"
 
-
 int main()
 {
-    // Initialisation
     gl::init("TPs de Rendering"); 
     gl::maximize_window(); 
+
+    glEnable(GL_BLEND); // Active le blending pour l'opacité
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // Fonction de mélange standard
 
     auto const rectangle_mesh = gl::Mesh{{
         .vertex_buffers = {{
@@ -37,12 +38,17 @@ int main()
     
         float aspectRatio = gl::framebuffer_aspect_ratio();
         shader.set_uniform("aspect_ratio", aspectRatio);
-    
-        float currentTime = gl::time_in_seconds();
-        shader.set_uniform("time", currentTime); // Passe le temps actuel au shader
-    
-        rectangle_mesh.draw();
-    
-        // Autres commandes pour gérer la fenêtre, etc.
+
+        // Dessine plusieurs carrés avec différents décalages de temps et opacités
+        for (int i = 0; i < 20; i++) {
+            float timeOffset = 0.1f * i; // Décalage de temps pour le mouvement
+            float opacity = 1.0f - (0.05f * i); // Réduit l'opacité pour chaque carré suivant
+
+            float currentTime = gl::time_in_seconds() - timeOffset;
+            shader.set_uniform("time", currentTime);
+            shader.set_uniform("opacity", opacity);
+
+            rectangle_mesh.draw(); // Dessine le carré avec les paramètres actuels
+        }
     }
 }
