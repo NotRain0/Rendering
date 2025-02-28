@@ -9,7 +9,7 @@ int main() {
     auto camera = gl::Camera{};
     gl::set_events_callbacks({camera.events_callbacks()});
 
-    // 🟢 Création de la Render Target (Framebuffer)
+    // 🟢 Création de la Render Target
     auto render_target = gl::RenderTarget{
         gl::RenderTarget_Descriptor{
             .width = gl::framebuffer_width_in_pixels(),
@@ -34,67 +34,41 @@ int main() {
     });
 
     // 🟢 Création du cube avec UVs
-    // 🟢 Création du cube avec UVs (CORRIGÉ)
-auto const cube_mesh = gl::Mesh{
-    {
-        .vertex_buffers = {{
-            .layout = {
-                gl::VertexAttribute::Position3D{0},
-                gl::VertexAttribute::UV{1}
-            },
-            .data = {
-                // Face avant
-                -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,  
-                 0.5f, -0.5f, -0.5f,  1.0f, 0.0f,  
-                 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,  
-                -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,  
+    auto const cube_mesh = gl::Mesh{
+        {
+            .vertex_buffers = {{
+                .layout = {
+                    gl::VertexAttribute::Position3D{0},
+                    gl::VertexAttribute::UV{1}
+                },
+                .data = {
+                    // Positions         // UVs
+                    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+                     0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+                     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+                    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
 
-                // Face arrière
-                -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,  
-                 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,  
-                 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,  
-                -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,  
-
-                // Face gauche
-                -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,  
-                -0.5f,  0.5f, -0.5f,  1.0f, 0.0f,  
-                -0.5f,  0.5f,  0.5f,  1.0f, 1.0f,  
-                -0.5f, -0.5f,  0.5f,  0.0f, 1.0f,  
-
-                // Face droite
-                 0.5f, -0.5f, -0.5f,  0.0f, 0.0f,  
-                 0.5f,  0.5f, -0.5f,  1.0f, 0.0f,  
-                 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,  
-                 0.5f, -0.5f,  0.5f,  0.0f, 1.0f,  
-
-                // Face haut
-                -0.5f,  0.5f, -0.5f,  0.0f, 0.0f,  
-                 0.5f,  0.5f, -0.5f,  1.0f, 0.0f,  
-                 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,  
-                -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,  
-
-                // Face bas
-                -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,  
-                 0.5f, -0.5f, -0.5f,  1.0f, 0.0f,  
-                 0.5f, -0.5f,  0.5f,  1.0f, 1.0f,  
-                -0.5f, -0.5f,  0.5f,  0.0f, 1.0f  
-            },
-        }},
-        .index_buffer = {
-            0, 1, 2, 0, 2, 3,   // Avant
-            4, 5, 6, 4, 6, 7,   // Arrière
-            8, 9, 10, 8, 10, 11, // Gauche
-            12, 13, 14, 12, 14, 15, // Droite
-            16, 17, 18, 16, 18, 19, // Haut
-            20, 21, 22, 20, 22, 23  // Bas
+                    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+                     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+                     0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+                    -0.5f,  0.5f,  0.5f,  0.0f, 1.0f
+                },
+            }},
+            .index_buffer = {
+                0, 1, 2, 0, 2, 3,
+                4, 5, 6, 4, 6, 7,
+                4, 0, 3, 4, 3, 7,
+                1, 5, 6, 1, 6, 2,
+                3, 2, 6, 3, 6, 7,
+                4, 5, 1, 4, 1, 0
+            }
         }
-    }
-};
+    };
 
-    // 🟢 Chargement de la texture
+    // 🟢 Chargement de la texture pour le cube
     auto const texture = gl::Texture{
         gl::TextureSource::File{
-            .path = "res/Crow.png",
+            .path = "res/SnowMap.png",
             .flip_y = true,
             .texture_format = gl::InternalFormat::RGBA8
         },
@@ -106,7 +80,7 @@ auto const cube_mesh = gl::Mesh{
         }
     };
 
-    // ✅ Correction de la Création du Shader (FONCTIONNE !)
+    // ✅ Shader de rendu 3D
     auto const scene_shader = gl::Shader{
         {
             .vertex = gl::ShaderSource::File{"res/vertex.glsl"},
@@ -114,7 +88,7 @@ auto const cube_mesh = gl::Mesh{
         }
     };
 
-    // 🟢 Création du quad plein écran
+    // 🟢 Création du quad plein écran pour afficher la Render Target
     auto const screen_quad = gl::Mesh{
         {
             .vertex_buffers = {{
@@ -133,7 +107,7 @@ auto const cube_mesh = gl::Mesh{
         }
     };
 
-    // ✅ Correction de la Création du Shader PostProcess (FONCTIONNE !)
+    // ✅ Shader pour le post-processing
     auto const postprocess_shader = gl::Shader{
         {
             .vertex = gl::ShaderSource::File{"res/screen_vertex.glsl"},
