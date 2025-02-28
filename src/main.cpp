@@ -30,7 +30,6 @@ int main()
     
     while (gl::window_is_open())
     {
-
         glClearColor(0.f, 0.f, 1.f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT);
     
@@ -39,6 +38,11 @@ int main()
         float aspectRatio = gl::framebuffer_aspect_ratio();
         shader.set_uniform("aspect_ratio", aspectRatio);
     
+        float currentTime = gl::time_in_seconds();
+        shader.set_uniform("time", currentTime); // Passe le temps actuel au shader
+    
         rectangle_mesh.draw();
+    
+        // Autres commandes pour gérer la fenêtre, etc.
     }
 }
