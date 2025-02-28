@@ -2,12 +2,10 @@
 
 #version 410
 
-in vec3 vertex_position; // Recevoir la position du vertex
-
+in vec2 frag_uv;
+uniform sampler2D my_texture;
 out vec4 out_color;
 
 void main() {
-    // Utilise la position du vertex comme couleur
-    // Normalise la position pour l'utiliser comme couleur (les positions peuvent être négatives)
-    out_color = vec4((vertex_position + 1.0) / 2.0, 1.0);
+    out_color = texture(my_texture, frag_uv);
 }
