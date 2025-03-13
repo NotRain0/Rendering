@@ -29,8 +29,9 @@ void main() {
     float point_light = diffuse_point * attenuation * light_intensity;
 
     float ambient = 0.3;
-    //float lighting = max(diffuse_dir + point_light + ambient, 0.0);
-    float lighting = max(point_light, 0.0);
+    //float lighting = max(diffuse_dir, 0.0) + max(point_light, 0.0) + max(ambient, 0.0);
+    float lighting = max(diffuse_dir, 0.0); //+ max(point_light, 0.0) + max(ambient, 0.0);
+    //float lighting = max(point_light, 0.0);
 
     vec3 texture_color = texture(my_texture, frag_uv).rgb;
     vec3 shaded_color = texture_color * lighting;
