@@ -55,7 +55,7 @@ int main() {
     auto const texture = gl::Texture{
         gl::TextureSource::File{
             .path = "res/fourareen2K_albedo.jpg",
-            .flip_y = true,
+            .flip_y = false,
             .texture_format = gl::InternalFormat::RGBA8
         },
         gl::TextureOptions{
@@ -78,17 +78,25 @@ int main() {
     while (gl::window_is_open()) {
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+    
         scene_shader.bind();
+    
         glm::mat4 view_matrix = camera.view_matrix();
         glm::mat4 projection_matrix = glm::perspective(glm::radians(45.0f), gl::framebuffer_aspect_ratio(), 0.1f, 100.0f);
+        
         glm::mat4 const rotation = glm::rotate(glm::mat4{1.f}, gl::time_in_seconds(), glm::vec3{1.f, 0.f, 0.f});
         
         glm::mat4 view_projection_matrix = projection_matrix * view_matrix * rotation;
-        
+        glm::mat4 normal_matrix = glm::transpose(glm::inverse(rotation));
+    
         scene_shader.set_uniform("view_projection_matrix", view_projection_matrix);
+        scene_shader.set_uniform("normal_matrix", normal_matrix);
         scene_shader.set_uniform("my_texture", texture);
-
+    
+        glm::vec3 light_dir = glm::normalize(glm::vec3(0.0f, 0.0f, -1.0f));
+        scene_shader.set_uniform("light_direction", light_dir);
+    
         model_mesh.draw();
     }
+    
 }
