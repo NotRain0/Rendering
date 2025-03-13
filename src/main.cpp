@@ -5,13 +5,12 @@
 #include <filesystem>
 #include <vector>
 #include <iostream>
+#include "glm/ext/matrix_transform.hpp"
 
-// 🔥 Fonction pour charger un modèle 3D depuis un fichier .obj (sans normales)
 auto load_mesh(std::filesystem::path const& path) -> gl::Mesh {
     tinyobj::ObjReader reader;
     reader.ParseFromFile(gl::make_absolute_path(path).string(), {});
 
-    // Stockage des positions + UVs
     std::vector<float> vertices;
     for (auto const& shape : reader.GetShapes()) {
         for (auto const& idx : shape.mesh.indices) {
@@ -51,10 +50,8 @@ int main() {
     auto camera = gl::Camera{};
     gl::set_events_callbacks({camera.events_callbacks()});
 
-    // 🎯 Chargement du modèle 3D
     auto const model_mesh = load_mesh("res/model.obj");
 
-    // 🎯 Chargement de la texture
     auto const texture = gl::Texture{
         gl::TextureSource::File{
             .path = "res/fourareen2K_albedo.jpg",
@@ -69,7 +66,6 @@ int main() {
         }
     };
 
-    // ✅ Shader de rendu 3D
     auto const scene_shader = gl::Shader{
         {
             .vertex = gl::ShaderSource::File{"res/vertex.glsl"},
@@ -86,11 +82,13 @@ int main() {
         scene_shader.bind();
         glm::mat4 view_matrix = camera.view_matrix();
         glm::mat4 projection_matrix = glm::perspective(glm::radians(45.0f), gl::framebuffer_aspect_ratio(), 0.1f, 100.0f);
-        glm::mat4 view_projection_matrix = projection_matrix * view_matrix;
+        glm::mat4 const rotation = glm::rotate(glm::mat4{1.f}, gl::time_in_seconds(), glm::vec3{1.f, 0.f, 0.f});
+        
+        glm::mat4 view_projection_matrix = projection_matrix * view_matrix * rotation;
+        
         scene_shader.set_uniform("view_projection_matrix", view_projection_matrix);
         scene_shader.set_uniform("my_texture", texture);
 
-        // 🟢 Rendu du modèle 3D
         model_mesh.draw();
     }
 }
