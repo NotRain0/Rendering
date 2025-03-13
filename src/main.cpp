@@ -92,6 +92,9 @@ int main() {
 
         glm::vec3 light_dir = glm::normalize(glm::vec3(0.0f, 0.0f, -1.0f));
         scene_shader.set_uniform("light_direction", light_dir);
+
+        glm::vec3 light_color = glm::vec3(1.0f, 0.0f, 1.5f);
+        scene_shader.set_uniform("light_color", light_color);
     
         model_mesh.draw();
     }
