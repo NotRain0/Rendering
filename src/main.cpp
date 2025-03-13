@@ -14,23 +14,19 @@ auto load_mesh(std::filesystem::path const& path) -> gl::Mesh {
     std::vector<float> vertices;
     for (auto const& shape : reader.GetShapes()) {
         for (auto const& idx : shape.mesh.indices) {
-            // Position (X, Y, Z)
             vertices.push_back(reader.GetAttrib().vertices[3 * idx.vertex_index + 0]);
             vertices.push_back(reader.GetAttrib().vertices[3 * idx.vertex_index + 1]);
             vertices.push_back(reader.GetAttrib().vertices[3 * idx.vertex_index + 2]);
 
-            // UV (U, V)
             vertices.push_back(reader.GetAttrib().texcoords[2 * idx.texcoord_index + 0]);
-            vertices.push_back(1.0f - reader.GetAttrib().texcoords[2 * idx.texcoord_index + 1]); // Flip Y
+            vertices.push_back(1.0f - reader.GetAttrib().texcoords[2 * idx.texcoord_index + 1]);
 
-                        // Normale
             vertices.push_back(reader.GetAttrib().normals[3 * idx.normal_index + 0]);
             vertices.push_back(reader.GetAttrib().normals[3 * idx.normal_index + 1]);
             vertices.push_back(reader.GetAttrib().normals[3 * idx.normal_index + 2]);
         }
     }
 
-    // Création du mesh
     return gl::Mesh{{
         .vertex_buffers = {{
             .layout = {
@@ -82,21 +78,21 @@ int main() {
         scene_shader.bind();
         glm::mat4 view_matrix = camera.view_matrix();
         glm::mat4 projection_matrix = glm::perspective(glm::radians(45.0f), gl::framebuffer_aspect_ratio(), 0.1f, 100.0f);
-        glm::mat4 const rotation = glm::rotate(glm::mat4{1.f}, gl::time_in_seconds(), glm::vec3{1.f, 0.f, 0.f});
         
-        glm::mat4 view_projection_matrix = projection_matrix * view_matrix * rotation;
-        
+        glm::mat4 model_matrix = glm::rotate(glm::mat4(1.0f), gl::time_in_seconds(), glm::vec3(1.0f, 0.0f, 0.0f));
+
+        glm::mat4 normal_matrix = glm::transpose(glm::inverse(model_matrix));
+
+        glm::mat4 view_projection_matrix = projection_matrix * view_matrix;
+
         scene_shader.set_uniform("view_projection_matrix", view_projection_matrix);
+        scene_shader.set_uniform("model_matrix", model_matrix);
+        scene_shader.set_uniform("normal_matrix", normal_matrix);
         scene_shader.set_uniform("my_texture", texture);
-    
+
         glm::vec3 light_dir = glm::normalize(glm::vec3(0.0f, 0.0f, -1.0f));
         scene_shader.set_uniform("light_direction", light_dir);
     
-        //glm::vec3 light_pos = glm::vec3(2.0f * sin(gl::time_in_seconds()), 2.0f * cos(gl::time_in_seconds()), 0.0f);
-        //scene_shader.set_uniform("light_position", light_pos);
-    
         model_mesh.draw();
     }
-    
-    
 }
