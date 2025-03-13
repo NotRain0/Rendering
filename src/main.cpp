@@ -1,74 +1,63 @@
 #include "opengl-framework/opengl-framework.hpp"
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
+#include <tiny_obj_loader.h>
+#include <filesystem>
+#include <vector>
+#include <iostream>
+
+// 🔥 Fonction pour charger un modèle 3D depuis un fichier .obj (sans normales)
+auto load_mesh(std::filesystem::path const& path) -> gl::Mesh {
+    tinyobj::ObjReader reader;
+    reader.ParseFromFile(gl::make_absolute_path(path).string(), {});
+
+    // Stockage des positions + UVs
+    std::vector<float> vertices;
+    for (auto const& shape : reader.GetShapes()) {
+        for (auto const& idx : shape.mesh.indices) {
+            // Position (X, Y, Z)
+            vertices.push_back(reader.GetAttrib().vertices[3 * idx.vertex_index + 0]);
+            vertices.push_back(reader.GetAttrib().vertices[3 * idx.vertex_index + 1]);
+            vertices.push_back(reader.GetAttrib().vertices[3 * idx.vertex_index + 2]);
+
+            // UV (U, V)
+            vertices.push_back(reader.GetAttrib().texcoords[2 * idx.texcoord_index + 0]);
+            vertices.push_back(1.0f - reader.GetAttrib().texcoords[2 * idx.texcoord_index + 1]); // Flip Y
+
+                        // Normale
+            vertices.push_back(reader.GetAttrib().normals[3 * idx.normal_index + 0]);
+            vertices.push_back(reader.GetAttrib().normals[3 * idx.normal_index + 1]);
+            vertices.push_back(reader.GetAttrib().normals[3 * idx.normal_index + 2]);
+        }
+    }
+
+    // Création du mesh
+    return gl::Mesh{{
+        .vertex_buffers = {{
+            .layout = {
+                gl::VertexAttribute::Position3D{0},
+                gl::VertexAttribute::UV{1},
+                gl::VertexAttribute::Normal3D{2}
+            },
+            .data = vertices
+        }}
+    }};
+}
 
 int main() {
-    gl::init("3D Rendering with Render Target");
+    gl::init("3D Model Rendering");
     gl::maximize_window();
 
     auto camera = gl::Camera{};
     gl::set_events_callbacks({camera.events_callbacks()});
 
-    // 🟢 Création de la Render Target
-    auto render_target = gl::RenderTarget{
-        gl::RenderTarget_Descriptor{
-            .width = gl::framebuffer_width_in_pixels(),
-            .height = gl::framebuffer_height_in_pixels(),
-            .color_textures = {
-                gl::ColorAttachment_Descriptor{ .format = gl::InternalFormat_Color::RGBA8 }
-            },
-            .depth_stencil_texture = gl::DepthStencilAttachment_Descriptor{
-                .format = gl::InternalFormat_DepthStencil::Depth32F
-            }
-        }
-    };
+    // 🎯 Chargement du modèle 3D
+    auto const model_mesh = load_mesh("res/model.obj");
 
-    // 🟢 Gestion du redimensionnement de la fenêtre
-    gl::set_events_callbacks({
-        camera.events_callbacks(),
-        {.on_framebuffer_resized = [&](gl::FramebufferResizedEvent const& e) {
-            if (e.width_in_pixels != 0 && e.height_in_pixels != 0) {
-                render_target.resize(e.width_in_pixels, e.height_in_pixels);
-            }
-        }},
-    });
-
-    // 🟢 Création du cube avec UVs
-    auto const cube_mesh = gl::Mesh{
-        {
-            .vertex_buffers = {{
-                .layout = {
-                    gl::VertexAttribute::Position3D{0},
-                    gl::VertexAttribute::UV{1}
-                },
-                .data = {
-                    // Positions         // UVs
-                    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-                     0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
-                     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-                    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-
-                    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-                     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-                     0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-                    -0.5f,  0.5f,  0.5f,  0.0f, 1.0f
-                },
-            }},
-            .index_buffer = {
-                0, 1, 2, 0, 2, 3,
-                4, 5, 6, 4, 6, 7,
-                4, 0, 3, 4, 3, 7,
-                1, 5, 6, 1, 6, 2,
-                3, 2, 6, 3, 6, 7,
-                4, 5, 1, 4, 1, 0
-            }
-        }
-    };
-
-    // 🟢 Chargement de la texture pour le cube
+    // 🎯 Chargement de la texture
     auto const texture = gl::Texture{
         gl::TextureSource::File{
-            .path = "res/SnowMap.png",
+            .path = "res/fourareen2K_albedo.jpg",
             .flip_y = true,
             .texture_format = gl::InternalFormat::RGBA8
         },
@@ -88,56 +77,20 @@ int main() {
         }
     };
 
-    // 🟢 Création du quad plein écran pour afficher la Render Target
-    auto const screen_quad = gl::Mesh{
-        {
-            .vertex_buffers = {{
-                .layout = { 
-                    gl::VertexAttribute::Position2D{0}, 
-                    gl::VertexAttribute::UV{1}
-                },
-                .data = {
-                    -1.0f, -1.0f, 0.0f, 0.0f,
-                     1.0f, -1.0f, 1.0f, 0.0f,
-                     1.0f,  1.0f, 1.0f, 1.0f,
-                    -1.0f,  1.0f, 0.0f, 1.0f
-                },
-            }},
-            .index_buffer = { 0, 1, 2, 0, 2, 3 }
-        }
-    };
-
-    // ✅ Shader pour le post-processing
-    auto const postprocess_shader = gl::Shader{
-        {
-            .vertex = gl::ShaderSource::File{"res/screen_vertex.glsl"},
-            .fragment = gl::ShaderSource::File{"res/postprocess.glsl"}
-        }
-    };
-
     glEnable(GL_DEPTH_TEST);
 
     while (gl::window_is_open()) {
-        // 🎯 Rendu du cube dans la Render Target
-        render_target.render([&]() {
-            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            scene_shader.bind();
-            glm::mat4 view_matrix = camera.view_matrix();
-            glm::mat4 projection_matrix = glm::perspective(glm::radians(45.0f), gl::framebuffer_aspect_ratio(), 0.1f, 100.0f);
-            glm::mat4 view_projection_matrix = projection_matrix * view_matrix;
-            scene_shader.set_uniform("view_projection_matrix", view_projection_matrix);
-            scene_shader.set_uniform("my_texture", texture);
+        scene_shader.bind();
+        glm::mat4 view_matrix = camera.view_matrix();
+        glm::mat4 projection_matrix = glm::perspective(glm::radians(45.0f), gl::framebuffer_aspect_ratio(), 0.1f, 100.0f);
+        glm::mat4 view_projection_matrix = projection_matrix * view_matrix;
+        scene_shader.set_uniform("view_projection_matrix", view_projection_matrix);
+        scene_shader.set_uniform("my_texture", texture);
 
-            cube_mesh.draw();
-        });
-
-        // 🖥️ Affichage de la Render Target sur l'écran
-        glDisable(GL_DEPTH_TEST);
-        postprocess_shader.bind();
-        postprocess_shader.set_uniform("screen_texture", render_target.color_texture(0));
-        screen_quad.draw();
-        glEnable(GL_DEPTH_TEST);
+        // 🟢 Rendu du modèle 3D
+        model_mesh.draw();
     }
 }
